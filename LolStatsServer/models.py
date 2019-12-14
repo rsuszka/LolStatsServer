@@ -21,7 +21,7 @@ class RiotApiKey(models.Model):
 class Match(models.Model):
     game_id = models.IntegerField()
     queue_id = models.IntegerField()
-    game_version = models.IntegerField()
+    game_version = models.CharField(max_length=50)
     duration = models.IntegerField()
 
     class Meta:
