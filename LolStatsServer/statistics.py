@@ -60,7 +60,8 @@ class ChampionStatistics:
                 first_blood_kill_counter += 1
             if matchChampion.first_tower:
                 first_tower_counter += 1
-            # TODO calculate win rate
+            if matchChampion.win:
+                win_game_counter += 1
             game_duration += matchChampion.match.duration
 
         number_of_matches = champion_matches.__len__()
@@ -85,7 +86,7 @@ class ChampionStatistics:
         self.first_tower = (first_tower_counter / number_of_matches) * 100
         if lane_query_set.__len__() > 0:
             self.lane = lane_query_set[0]['lane']
-        self.win_rate = self.win_rate
+        self.win_rate = (win_game_counter / number_of_matches) * 100
         self.average_game_duration = game_duration / number_of_matches
         self.play_rate = (number_of_matches / number_of_all_matches) * 100
         self.ban_rate = (number_of_bans / number_of_matches) * 100

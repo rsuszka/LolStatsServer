@@ -7,3 +7,7 @@ python manage.py createsuperuser
 python manage.py migrate --run-syncdb
 
 https://eun1.api.riotgames.com/lol/match/v4/matches/2330428354?api_key=RGAPI-9af229e6-2abb-4c76-abc9-18c8524c5d35
+
+uruchomienie:
+1. git clone
+2. python manage.py runserver

@@ -54,6 +54,7 @@ class MatchChampion(models.Model):
     first_blood_kill = models.BooleanField()
     first_tower = models.BooleanField()
     lane = models.CharField(max_length=50)
+    win = models.BooleanField()
 
     class Meta:
         verbose_name = "MatchChampion"

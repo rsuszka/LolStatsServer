@@ -114,13 +114,15 @@ class LoadDataFromRioApi(APIView):
                                         first_blood_kill = participant_stats['firstBloodKill']
                                         first_tower = participant_stats['firstTowerKill']
                                         lane = participant['timeline']['lane']
+                                        win = participant_stats['win']
                                         stated_champion = Champion.objects.filter(champion_id=participant['championId'])[0]
                                         new_participant = MatchChampion(match=new_match, champion=stated_champion, kills=kills, deaths=deaths, assists=assists,
                                                                         damage_defeat=damage_defeat, damage_to_objectives=damage_to_objectives, damage_taken=damage_taken,
                                                                         gold_earned=gold_earned, vision_score=vision_score, total_heal=total_heal,
-                                                                        champion_level= champion_level, first_blood_kill=first_blood_kill, first_tower=first_tower, lane=lane)
+                                                                        champion_level=champion_level, first_blood_kill=first_blood_kill, first_tower=first_tower,
+                                                                        lane=lane, win=win)
                                         new_participant.save()
-                                    break
+                        break
 
     def post(self):
         pass
