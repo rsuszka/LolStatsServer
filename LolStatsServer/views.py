@@ -1,10 +1,12 @@
+from django.utils.datastructures import MultiValueDictKeyError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import HttpResponse
 import requests
 import json
 from .models import Champion, RiotApiKey, Match, MatchBan, MatchChampion
-from .serializers import ChampionSerializer
+from .serializers import ChampionSerializer, ChampionStatisticsSerializer
+from .statistics import ChampionStatistics
 
 
 class GetChampionsList(APIView):
@@ -33,7 +35,7 @@ class ReloadChampions(APIView):
             response_json = champions_response.json()
             for champion in response_json['data']:
                 key = response_json['data'][champion]['key']
-                name = response_json['data'][champion]['name']
+                name = response_json['data'][champion]['name'].lower()
                 new_champion = Champion(champion_id=key, name=name)
                 new_champion.save()
             # create response
@@ -122,3 +124,29 @@ class LoadDataFromRioApi(APIView):
 
     def post(self):
         pass
+
+
+class GetStatisticsFromChampion(APIView):
+
+    @staticmethod
+    def get(request):
+        response_data = {}
+        try:
+            champion_name = request.GET['name'].lower()
+            if MatchChampion.objects.filter(champion__name=champion_name).__len__() > 0:
+                # calculate champion statistics
+                champion_statistics = ChampionStatistics(champion_name=champion_name)
+                champion_statistics.calculate()
+                champion_statistics_serializer = ChampionStatisticsSerializer(champion_statistics)
+                return Response(champion_statistics_serializer.data)
+            else:
+                response_data['message'] = 'Wrong champion name'
+                return HttpResponse(json.dumps(response_data), content_type="application/json", status=404)
+
+        except MultiValueDictKeyError:
+            response_data['message'] = 'Required String parameter "name" is not present'
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=400)
+
+        except:
+            response_data['message'] = 'Other server error'
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)

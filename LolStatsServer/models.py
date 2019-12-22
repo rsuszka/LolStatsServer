@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Champion(models.Model):
-    champion_id = models.IntegerField()
+    champion_id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=50)
 
     class Meta:

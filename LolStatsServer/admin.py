@@ -3,7 +3,7 @@ from .models import Champion, RiotApiKey, Match, MatchBan, MatchChampion
 
 
 class ChampionAdmin(admin.ModelAdmin):
-    list_display = ["id", "champion_id", "name"]
+    list_display = ["champion_id", "name"]
 
 
 class RiotApiKeyAdmin(admin.ModelAdmin):
