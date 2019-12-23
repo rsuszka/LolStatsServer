@@ -15,12 +15,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from .views import GetChampionsList, ReloadChampions, LoadDataFromRioApi, GetStatisticsFromChampion
+from .views import GetChampionsList, ReloadChampions, LoadDataFromRioApi, GetStatisticsFromChampion, GetStatisticsFromUser
 
 urlpatterns = [
     path('', admin.site.urls),
     path('api/champions', GetChampionsList.as_view()),
     path('api/champions/reload', ReloadChampions.as_view()),
     path('api/load', LoadDataFromRioApi.as_view()),
-    path('api/statistics/champion', GetStatisticsFromChampion.as_view())
+    path('api/statistics/champion', GetStatisticsFromChampion.as_view()),
+    path('api/statistics/summoner', GetStatisticsFromUser.as_view())
 ]

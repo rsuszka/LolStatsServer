@@ -7,6 +7,7 @@ import json
 from .models import Champion, RiotApiKey, Match, MatchBan, MatchChampion
 from .serializers import ChampionSerializer, ChampionStatisticsSerializer
 from .statistics import ChampionStatistics
+from riotwatcher import RiotWatcher, ApiError
 
 
 class GetChampionsList(APIView):
@@ -152,3 +153,40 @@ class GetStatisticsFromChampion(APIView):
         except:
             response_data['message'] = 'Other server error'
             return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
+
+
+class GetStatisticsFromUser(APIView):
+
+    @staticmethod
+    def get(request):
+        response_data = {}
+        try:
+            summoner_name = request.GET['name']
+            region = request.GET['region']
+            watcher = RiotWatcher(RiotApiKey.objects.all()[0].api_key)
+            account_data = watcher.summoner.by_name(region, summoner_name)
+            mastery_data = watcher.champion_mastery.by_summoner(region, account_data['id'])
+            mastery_scores_data = watcher.champion_mastery.scores_by_summoner(region, account_data['id'])
+            summoner_history = watcher.match.matchlist_by_account(region, account_data['accountId'])
+            response_data['name'] = account_data['name']
+            response_data['profile_icon_id'] = account_data['profileIconId']
+            response_data['summoner_level'] = account_data['summonerLevel']
+            response_data['mastery_score'] = mastery_scores_data
+            response_data['masteries'] = mastery_data
+            response_data['history'] = summoner_history['matches']
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
+
+        except MultiValueDictKeyError:
+            response_data['message'] = 'Required String parameters "name" and "region" are not present'
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=400)
+
+        except ApiError as err:
+            if err.response.status_code == 429:
+                response_data['message'] = 'Riot Api server is unavailable. Try later'
+                return HttpResponse(json.dumps(response_data), content_type="application/json", status=429)
+            elif err.response.status_code == 404:
+                response_data['message'] = 'Wrong summoner name or region'
+                return HttpResponse(json.dumps(response_data), content_type="application/json", status=404)
+            else:
+                response_data['message'] = 'Other server error'
+                return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
