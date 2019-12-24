@@ -26,31 +26,28 @@ class ReloadChampions(APIView):
 
     @staticmethod
     def get(request):
-        response_data = {}
-        champions_response = requests.get('http://ddragon.leagueoflegends.com/cdn/9.24.1/data/en_US/champion.json')
-        if champions_response.status_code == 200:
+        try:
+            response_data = {}
+            region = 'euw1'
+            watcher = RiotWatcher(RiotApiKey.objects.all()[0].api_key)
+            version_json = watcher.data_dragon.versions_for_region(region)
+            champions_version = version_json['n']['champion']
+            champions_json = watcher.data_dragon.champions(champions_version)
             # delete old champions list
-            for champion in Champion.objects.all():
-                champion.delete()
+            Champion.objects.all().delete()
             # create new champions list
-            response_json = champions_response.json()
-            for champion in response_json['data']:
-                key = response_json['data'][champion]['key']
-                name = response_json['data'][champion]['name'].lower()
+            for champion in champions_json['data']:
+                key = champions_json['data'][champion]['key']
+                name = champions_json['data'][champion]['name'].lower()
                 new_champion = Champion(champion_id=key, name=name)
                 new_champion.save()
             # create response
-            response_data['result'] = 'ok'
-            response_data['message'] = 'champions reloaded successful'
-        else:
-            # create response
-            response_data['result'] = 'error'
-            response_data['message'] = 'status code ' + str(champions_response.status_code)
+            response_data['message'] = 'Champions reloaded successful'
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
 
-        return HttpResponse(json.dumps(response_data), content_type="application/json")
-
-    def post(self):
-        pass
+        except ApiError:
+            response_data['message'] = 'Other server error'
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
 
 
 class LoadDataFromRioApi(APIView):

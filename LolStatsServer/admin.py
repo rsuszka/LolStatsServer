@@ -4,6 +4,7 @@ from .models import Champion, RiotApiKey, Match, MatchBan, MatchChampion
 
 class ChampionAdmin(admin.ModelAdmin):
     list_display = ["champion_id", "name"]
+    change_list_template = 'champions_change_list.html'
 
 
 class RiotApiKeyAdmin(admin.ModelAdmin):

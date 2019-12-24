@@ -19,9 +19,9 @@ from .views import GetChampionsList, ReloadChampions, LoadDataFromRioApi, GetSta
 
 urlpatterns = [
     path('', admin.site.urls),
+    path('api/admin/champions/reload', ReloadChampions.as_view()),
+    path('api/admin/load', LoadDataFromRioApi.as_view()),
     path('api/champions', GetChampionsList.as_view()),
-    path('api/champions/reload', ReloadChampions.as_view()),
-    path('api/load', LoadDataFromRioApi.as_view()),
     path('api/statistics/champion', GetStatisticsFromChampion.as_view()),
     path('api/statistics/summoner', GetStatisticsFromUser.as_view())
 ]
