@@ -4,10 +4,21 @@ from rest_framework.response import Response
 from django.http import HttpResponse
 import requests
 import json
-from .models import Champion, RiotApiKey, Match, MatchBan, MatchChampion
+from .models import Champion, RiotApiKey, Match, MatchBan, MatchChampion, ServerInfo
 from .serializers import ChampionSerializer, ChampionStatisticsSerializer
 from .statistics import ChampionStatistics
 from riotwatcher import RiotWatcher, ApiError
+from background_task import background
+import time
+import subprocess
+from background_task.models import Task, CompletedTask
+
+
+class ProcessMemory:
+    process = None
+
+    def __init__(self, process):
+        self.process = process
 
 
 class GetChampionsList(APIView):
@@ -187,3 +198,65 @@ class GetStatisticsFromUser(APIView):
             else:
                 response_data['message'] = 'Other server error'
                 return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
+
+
+processMemory = ProcessMemory(None)
+
+
+class StartAnalyzeGames(APIView):
+
+    @staticmethod
+    def get(request):
+        response_data = {}
+        # initialize object if not exists
+        if ServerInfo.objects.all().__len__() == 0:
+            server_info = ServerInfo(game_analyzed=0, game_analyzed_from_start=0, analyze_running=True, analyze_info='Admin started analyze')
+            server_info.save()
+        # run background task
+        if processMemory.process is None:
+            server_info = ServerInfo.objects.all()[0]
+            server_info.game_analyzed_from_start = 0
+            server_info.analyze_running = True
+            server_info.analyze_info = 'Admin started analyze'
+            server_info.save()
+            start_analyze(schedule=5)
+            process = subprocess.Popen(['python', 'manage.py', 'process_tasks'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            processMemory.process = process
+            response_data['message'] = 'Analyze was started'
+        else:
+            response_data['message'] = 'Analyze already running!'
+
+        return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
+
+
+class StopAnalyzeGames(APIView):
+
+    @staticmethod
+    def get(request):
+        response_data = {}
+        if processMemory.process is not None:
+            # stop background task
+            processMemory.process.terminate()
+            processMemory.process = None
+            server_info = ServerInfo.objects.all()[0]
+            server_info.analyze_running = False
+            server_info.analyze_info = 'Admin stopped analyze'
+            server_info.save()
+            Task.objects.all().delete()
+            CompletedTask.objects.all().delete()
+            response_data['message'] = 'Analyze was stopped'
+        else:
+            response_data['message'] = 'Analyze is not started!'
+
+        return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
+
+
+@background(schedule=10)
+def start_analyze():
+    current_server_info = ServerInfo.objects.all()[0]
+    while True:
+        current_server_info.game_analyzed += 1
+        current_server_info.game_analyzed_from_start += 1
+        current_server_info.save()
+        current_server_info = ServerInfo.objects.all()[0]
+        time.sleep(1)

@@ -26,8 +26,8 @@
         }
     </style>
     <script>
-        function reloadChampions() {
-            let url = "http://" + window.location.hostname + ":" + window.location.port + "/api/admin/champions/reload";
+        function startAnalyze() {
+            let url = "http://" + window.location.hostname + ":" + window.location.port + "/api/admin/analyze/start";
             let http = new XMLHttpRequest();
             http.open("GET", url, true);
             http.send(null);
@@ -38,10 +38,27 @@
                     alert(responseJson.message);
                     location.reload();
                 } else
-                    alert("Reload error");
+                    alert("Error");
+            };
+        }
+
+        function stopAnalyze() {
+            let url = "http://" + window.location.hostname + ":" + window.location.port + "/api/admin/analyze/stop";
+            let http = new XMLHttpRequest();
+            http.open("GET", url, true);
+            http.send(null);
+
+            http.onreadystatechange = (e) => {
+                let responseJson = JSON.parse(http.responseText);
+                if (http.status == 200) {
+                    alert(responseJson.message);
+                    location.reload();
+                } else
+                    alert("Error");
             };
         }
     </script>
-    <button class="my_button" onclick="reloadChampions()">Reload Champions</button>
+    <button class="my_button" onclick="startAnalyze()">Start Analyze</button>
+    <button class="my_button" onclick="stopAnalyze()">Stop Analyze</button>
 </li>
 {% endblock %}

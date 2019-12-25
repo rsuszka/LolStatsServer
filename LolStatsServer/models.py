@@ -59,3 +59,14 @@ class MatchChampion(models.Model):
     class Meta:
         verbose_name = "MatchChampion"
         verbose_name_plural = "MatchChampions"
+
+
+class ServerInfo(models.Model):
+    game_analyzed = models.IntegerField()
+    game_analyzed_from_start = models.IntegerField()
+    analyze_running = models.BooleanField()
+    analyze_info = models.CharField(max_length=200)
+
+    class Meta:
+        verbose_name = "ServerInfo"
+        verbose_name_plural = "ServerInfo"

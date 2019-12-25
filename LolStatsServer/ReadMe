@@ -2,6 +2,7 @@ biblioteki:
 pip install django
 pip install djangorestframework
 pip install riotwatcher
+pip install django-background-tasks
 
 baza danych:
 python manage.py createsuperuser
