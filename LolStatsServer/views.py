@@ -84,17 +84,70 @@ class GetStatisticsFromUser(APIView):
         try:
             summoner_name = request.GET['name']
             region = request.GET['region']
+            # collecting summoner data from riot api
             watcher = RiotWatcher(RiotApiKey.objects.all()[0].api_key)
             account_data = watcher.summoner.by_name(region, summoner_name)
             mastery_data = watcher.champion_mastery.by_summoner(region, account_data['id'])
             mastery_scores_data = watcher.champion_mastery.scores_by_summoner(region, account_data['id'])
             summoner_history = watcher.match.matchlist_by_account(region, account_data['accountId'])
+            leagues_data = watcher.league.by_summoner(region, account_data['id'])
+
+            # process data
+            # process last 5 history games
+            history_game_counter = 1
+            match_table = []
+            for history_game in summoner_history['matches']:
+                game_object = {}
+                game = watcher.match.by_id(region, history_game['gameId'])
+                game_object['game_duration'] = game['gameDuration']
+                game_object['map_id'] = game['mapId']  # TODO change id to name
+                participant_id = 1
+                for participant_identities in game['participantIdentities']:
+                    if participant_identities['player']['summonerName'].lower() == summoner_name.lower():
+                        participant_id = participant_identities['participantId']
+                        break
+                champion_info = game['participants'][participant_id - 1]['stats']
+                game_object['kills'] = champion_info['kills']
+                game_object['deaths'] = champion_info['deaths']
+                game_object['assists'] = champion_info['assists']
+                game_object['cs'] = champion_info['totalMinionsKilled']
+                game_object['win'] = champion_info['win']
+                game_object['champion_name'] = Champion.objects.filter(champion_id=game['participants'][participant_id - 1]['championId'])[0].name
+                match_table.append(game_object)
+                history_game_counter += 1
+                if history_game_counter > 5:
+                    break
+
+            mastery_table = []
+            for champion_mastery in mastery_data:
+                mastery_object = {
+                    'champion_name': Champion.objects.filter(champion_id=champion_mastery['championId'])[0].name,
+                    'champion_level': champion_mastery['championLevel'],
+                    'champion_points': champion_mastery['championPoints'],
+                    'chest granted': champion_mastery['chestGranted'],
+                    'tokens_earned': champion_mastery['tokensEarned']}
+                mastery_table.append(mastery_object)
+
+            leagues_table = []
+            for champion_league in leagues_data:
+                league_object = {'queue_type': champion_league['queueType'].replace('_', ' '),
+                                 'tier': champion_league['tier'],
+                                 'rank': champion_league['rank'],
+                                 'lp': champion_league['leaguePoints'],
+                                 'played': champion_league['wins'] + champion_league['losses'],
+                                 'wins': champion_league['wins'],
+                                 'losses': champion_league['losses'],
+                                 'win_rate': champion_league['wins'] / (champion_league['wins'] + champion_league['losses']) * 100}
+                leagues_table.append(league_object)
+
+            # create response
             response_data['name'] = account_data['name']
             response_data['profile_icon_id'] = account_data['profileIconId']
             response_data['summoner_level'] = account_data['summonerLevel']
             response_data['mastery_score'] = mastery_scores_data
-            response_data['masteries'] = mastery_data
-            response_data['history'] = summoner_history['matches']
+            response_data['masteries'] = mastery_table
+            response_data['history'] = match_table
+            response_data['rankeds'] = leagues_table
             return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
 
         except MultiValueDictKeyError:
@@ -109,8 +162,12 @@ class GetStatisticsFromUser(APIView):
                 response_data['message'] = 'Wrong summoner name or region'
                 return HttpResponse(json.dumps(response_data), content_type="application/json", status=404)
             else:
-                response_data['message'] = 'Other server error'
+                response_data['message'] = 'Other api error [' + str(err.response.status_code) + ']'
                 return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
+
+        except Exception:
+            response_data['message'] = 'Other server error'
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=501)
 
 
 # collecting data object
