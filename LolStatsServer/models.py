@@ -10,6 +10,17 @@ class Champion(models.Model):
         verbose_name_plural = "Champions"
 
 
+class Queue(models.Model):
+    queue_id = models.IntegerField(primary_key=True)
+    map = models.CharField(max_length=50)
+    description = models.CharField(max_length=100)
+    notes = models.CharField(max_length=200)
+
+    class Meta:
+        verbose_name = "Queue"
+        verbose_name_plural = "Queues"
+
+
 class RiotApiKey(models.Model):
     api_key = models.CharField(max_length=50)
 

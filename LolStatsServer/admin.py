@@ -1,10 +1,15 @@
 from django.contrib import admin
-from .models import Champion, RiotApiKey, Match, MatchBan, MatchChampion, ServerInfo
+from .models import Champion, RiotApiKey, Match, MatchBan, MatchChampion, ServerInfo, Queue
 
 
 class ChampionAdmin(admin.ModelAdmin):
     list_display = ["champion_id", "name"]
     change_list_template = 'champions_change_list.html'
+
+
+class QueueAdmin(admin.ModelAdmin):
+    list_display = ["queue_id", "map", "description", "notes"]
+    change_list_template = 'queues_change_list.html'
 
 
 class RiotApiKeyAdmin(admin.ModelAdmin):
@@ -31,6 +36,7 @@ class ServerInfoAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Champion, ChampionAdmin)
+admin.site.register(Queue, QueueAdmin)
 admin.site.register(RiotApiKey, RiotApiKeyAdmin)
 admin.site.register(Match, MatchAdmin)
 admin.site.register(MatchBan, MatchBanAdmin)

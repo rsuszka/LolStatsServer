@@ -3,11 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import HttpResponse
 import json
-from .models import Champion, RiotApiKey, MatchChampion, ServerInfo
+from .models import Champion, RiotApiKey, MatchChampion, ServerInfo, Queue
 from .serializers import ChampionSerializer, ChampionStatisticsSerializer
 from LolStatsServer.model.statistics import ChampionStatistics
 from LolStatsServer.model.collecting_data import CollectData
 from riotwatcher import RiotWatcher, ApiError
+import requests
 
 
 class GetChampionsList(APIView):
@@ -44,6 +45,35 @@ class ReloadChampions(APIView):
             # create response
             response_data['message'] = 'Champions reloaded successful'
             return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
+
+        except ApiError:
+            response_data['message'] = 'Other server error'
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
+
+
+class ReloadQueues(APIView):
+
+    @staticmethod
+    def get(request):
+        try:
+            response_data = {}
+            queues_url = 'http://static.developer.riotgames.com/docs/lol/queues.json'
+            queues_request = requests.get(queues_url)
+            if queues_request.status_code == 200:
+                queues_json = queues_request.json()
+                # delete old queues list
+                Queue.objects.all().delete()
+                # create new queues list
+                for game_queue in queues_json:
+                    queue_id = game_queue['queueId']
+                    map_name = game_queue['map']
+                    description = (game_queue['description'] if game_queue['description'] is not None else "")
+                    notes = (game_queue['notes'] if game_queue['notes'] is not None else "")
+                    new_queue = Queue(queue_id=queue_id, map=map_name, description=description, notes=notes)
+                    new_queue.save()
+                # create response
+                response_data['message'] = 'Maps reloaded successful'
+                return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
 
         except ApiError:
             response_data['message'] = 'Other server error'
@@ -100,7 +130,9 @@ class GetStatisticsFromUser(APIView):
                 game_object = {}
                 game = watcher.match.by_id(region, history_game['gameId'])
                 game_object['game_duration'] = game['gameDuration']
-                game_object['map_id'] = game['mapId']  # TODO change id to name
+                current_queue = Queue.objects.filter(queue_id=game['queueId'])[0]
+                game_object['map'] = current_queue.map
+                game_object['game_type'] = current_queue.description
                 participant_id = 1
                 for participant_identities in game['participantIdentities']:
                     if participant_identities['player']['summonerName'].lower() == summoner_name.lower():
