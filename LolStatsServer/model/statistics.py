@@ -1,5 +1,5 @@
 from django.db.models import Count
-from .models import MatchChampion, Match, MatchBan
+from LolStatsServer.models import MatchChampion, Match, MatchBan
 
 
 class ChampionStatistics:
@@ -22,6 +22,7 @@ class ChampionStatistics:
     average_game_duration = 0.0
     play_rate = 0.0
     ban_rate = 0.0
+    analyzed_games = 0
 
     def __init__(self, champion_name):
         self.champion_name = champion_name
@@ -69,7 +70,7 @@ class ChampionStatistics:
         number_of_bans = MatchBan.objects.filter(champion__name=self.champion_name).__len__()
 
         # most played lane
-        lane_query_set = MatchChampion.objects.filter(champion__name=self.champion_name).values('lane').annotate(lane_count=Count('lane'))
+        lane_query_set = MatchChampion.objects.filter(champion__name=self.champion_name).values('lane').annotate(lane_count=Count('lane')).order_by('-lane_count')
 
         # calculate statistics
         self.average_kills = kills / number_of_matches
@@ -89,4 +90,5 @@ class ChampionStatistics:
         self.win_rate = (win_game_counter / number_of_matches) * 100
         self.average_game_duration = game_duration / number_of_matches
         self.play_rate = (number_of_matches / number_of_all_matches) * 100
-        self.ban_rate = (number_of_bans / number_of_matches) * 100
+        self.ban_rate = (number_of_bans / number_of_all_matches) * 100
+        self.analyzed_games = number_of_matches

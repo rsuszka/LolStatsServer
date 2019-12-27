@@ -65,7 +65,7 @@ class ServerInfo(models.Model):
     game_analyzed = models.IntegerField()
     game_analyzed_from_start = models.IntegerField()
     analyze_running = models.BooleanField()
-    analyze_info = models.CharField(max_length=200)
+    analyze_info = models.CharField(max_length=10000)
 
     class Meta:
         verbose_name = "ServerInfo"

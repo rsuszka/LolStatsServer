@@ -27,6 +27,7 @@ class ChampionStatisticsSerializer(serializers.Serializer):
     average_game_duration = serializers.FloatField()
     play_rate = serializers.FloatField()
     ban_rate = serializers.FloatField()
+    analyzed_games = serializers.IntegerField()
 
     def update(self, instance, validated_data):
         pass
