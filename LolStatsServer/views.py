@@ -153,6 +153,7 @@ class GetStatisticsFromUser(APIView):
                     break
 
             mastery_table = []
+            champion_mastery_counter = 1
             for champion_mastery in mastery_data:
                 mastery_object = {
                     'champion_name': Champion.objects.filter(champion_id=champion_mastery['championId'])[0].name,
@@ -161,6 +162,9 @@ class GetStatisticsFromUser(APIView):
                     'chest granted': champion_mastery['chestGranted'],
                     'tokens_earned': champion_mastery['tokensEarned']}
                 mastery_table.append(mastery_object)
+                champion_mastery_counter += 1
+                if champion_mastery_counter > 5:
+                    break
 
             leagues_table = []
             for champion_league in leagues_data:
