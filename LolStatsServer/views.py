@@ -87,6 +87,7 @@ class GetStatisticsFromChampion(APIView):
         response_data = {}
         try:
             champion_name = request.GET['name'].lower()
+            champion_name = 'nunu & willump' if champion_name == 'nunu' else champion_name
             if MatchChampion.objects.filter(champion__name=champion_name).__len__() > 0:
                 # calculate champion statistics
                 champion_statistics = ChampionStatistics(champion_name=champion_name)
