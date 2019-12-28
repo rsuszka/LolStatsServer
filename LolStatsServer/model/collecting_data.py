@@ -3,26 +3,31 @@ import time
 import subprocess
 from background_task.models import Task, CompletedTask
 from riotwatcher import RiotWatcher
-from LolStatsServer.models import Champion, RiotApiKey, Match, MatchBan, MatchChampion, ServerInfo
+from LolStatsServer.models import Champion, RiotApiKey, Match, MatchBan, MatchChampion, ServerInfo, ServerLog
+from datetime import datetime
 
 
 class CollectData:
-    process: subprocess
+    __process: subprocess
 
     def __init__(self):
-        self.process = None
+        self.__process = None
 
     @background(schedule=10)
     def __background_analyze():
         try:
             # load ranked queue
             watcher = RiotWatcher(RiotApiKey.objects.all()[0].api_key)
+            # read analyze parameters from database
+            starting_server_info = ServerInfo.objects.all()[0]
             region = 'eun1'
-            division = 'I'
-            tier = 'GOLD'
+            division = starting_server_info.division_to_analyze
+            tier = starting_server_info.tier_to_analyze
             queue = 'RANKED_SOLO_5x5'
-            # analyze 10 pages of summoners (each page contains 204 summoners)
-            for page in range(1, 11):
+            start_page = starting_server_info.start_page
+            end_page = starting_server_info.end_page
+            # analyze pages of summoners (each page contains 204 summoners)
+            for page in range(start_page, end_page + 1):
                 ranked_queue = watcher.league.entries(region, queue, tier, division, page)
                 for summoner in ranked_queue:
                     try:
@@ -98,19 +103,21 @@ class CollectData:
 
                             # error in match
                             except Exception as err:
-                                a = 5
-                                # TODO add logs
+                                log = ServerLog(tier=tier, division=division, page=page, note='Match error. ' + str(err), date_time=datetime.now())
+                                log.save()
 
                     # error in loading summoner account or history
                     except Exception as err:
-                        a = 5
-                        # TODO add logs
+                        log = ServerLog(tier=tier, division=division, page=page, note='Summoner error. ' + str(err), date_time=datetime.now())
+                        log.save()
 
             # actualize server info
             server_info = ServerInfo.objects.all()[0]
             server_info.analyze_running = False
             server_info.analyze_info = 'Algorithm end'
             server_info.save()
+            log = ServerLog(tier=tier, division=division, page=page, note='Algorithm end', date_time=datetime.now())
+            log.save()
 
         # error in loading league
         except Exception as err:
@@ -118,13 +125,15 @@ class CollectData:
             server_info.analyze_running = False
             server_info.analyze_info = 'Error. Server error'
             server_info.save()
+            log = ServerLog(tier=tier, division=division, page=page, note='Error. Server error. ' + str(err), date_time=datetime.now())
+            log.save()
 
     def start_analyze(self, schedule: int):
         self.__background_analyze(schedule=schedule)
-        self.process = subprocess.Popen(['python', 'manage.py', 'process_tasks'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.__process = subprocess.Popen(['python', 'manage.py', 'process_tasks'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def stop_analyze(self):
-        self.process.terminate()
-        self.process = None
+        self.__process.terminate()
+        self.__process = None
         Task.objects.all().delete()
         CompletedTask.objects.all().delete()

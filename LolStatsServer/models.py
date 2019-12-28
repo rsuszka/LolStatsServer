@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -73,11 +74,41 @@ class MatchChampion(models.Model):
 
 
 class ServerInfo(models.Model):
+    TIER_CHOICE = (
+        ('IRON', 'IRON'),
+        ('BRONZE', 'BRONZE'),
+        ('SILVER', 'SILVER'),
+        ('GOLD', 'GOLD'),
+        ('PLATINUM', 'PLATINUM'),
+        ('DIAMOND', 'DIAMOND'),
+    )
+    DIVISION_CHOICE = (
+        ('I', 'I'),
+        ('II', 'II'),
+        ('III', 'III'),
+        ('IV', 'IV'),
+    )
     game_analyzed = models.IntegerField()
     game_analyzed_from_start = models.IntegerField()
     analyze_running = models.BooleanField()
     analyze_info = models.CharField(max_length=10000)
+    tier_to_analyze = models.CharField(max_length=8, choices=TIER_CHOICE)
+    division_to_analyze = models.CharField(max_length=3, choices=DIVISION_CHOICE)
+    start_page = models.IntegerField(default=1, validators=[MaxValueValidator(100), MinValueValidator(1)])
+    end_page = models.IntegerField(default=1, validators=[MaxValueValidator(100), MinValueValidator(1)])
 
     class Meta:
         verbose_name = "ServerInfo"
         verbose_name_plural = "ServerInfo"
+
+
+class ServerLog(models.Model):
+    tier = models.CharField(max_length=8)
+    division = models.CharField(max_length=3)
+    page = models.IntegerField()
+    note = models.CharField(max_length=10000)
+    date_time = models.DateTimeField()
+
+    class Meta:
+        verbose_name = "ServerLog"
+        verbose_name_plural = "ServerLogs"

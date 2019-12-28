@@ -3,12 +3,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import HttpResponse
 import json
-from .models import Champion, RiotApiKey, MatchChampion, ServerInfo, Queue
+from .models import Champion, RiotApiKey, MatchChampion, ServerInfo, Queue, ServerLog
 from .serializers import ChampionSerializer, ChampionStatisticsSerializer
 from LolStatsServer.model.statistics import ChampionStatistics
 from LolStatsServer.model.collecting_data import CollectData
 from riotwatcher import RiotWatcher, ApiError
 import requests
+from datetime import datetime
 
 
 class GetChampionsList(APIView):
@@ -214,15 +215,20 @@ class StartAnalyzeGames(APIView):
         response_data = {}
         # initialize object if not exists
         if ServerInfo.objects.all().__len__() == 0:
-            server_info = ServerInfo(game_analyzed=0, game_analyzed_from_start=0, analyze_running=True, analyze_info='Admin started analyze')
+            server_info = ServerInfo(game_analyzed=0, game_analyzed_from_start=0, analyze_running=False, analyze_info='Admin started analyze',
+                                     tier_to_analyze='GOLD', division_to_analyze='I', start_page=1, end_page=10)
             server_info.save()
         # run background task
-        if collectData.process is None:
-            server_info = ServerInfo.objects.all()[0]
+        server_info = ServerInfo.objects.all()[0]
+        if not server_info.analyze_running:
             server_info.game_analyzed_from_start = 0
             server_info.analyze_running = True
             server_info.analyze_info = 'Admin started analyze'
             server_info.save()
+            # log
+            log = ServerLog(tier=server_info.tier_to_analyze, division=server_info.division_to_analyze, page=server_info.start_page,
+                            note='Admin started analyze', date_time=datetime.now())
+            log.save()
             collectData.start_analyze(5)
             response_data['message'] = 'Analyze was started'
         else:
@@ -236,14 +242,21 @@ class StopAnalyzeGames(APIView):
     @staticmethod
     def get(request):
         response_data = {}
-        if collectData.process is not None:
-            # stop background task
-            collectData.stop_analyze()
+        if ServerInfo.objects.all().__len__() > 0:
             server_info = ServerInfo.objects.all()[0]
-            server_info.analyze_running = False
-            server_info.analyze_info = 'Admin stopped analyze'
-            server_info.save()
-            response_data['message'] = 'Analyze was stopped'
+            if server_info.analyze_running:
+                # stop background task
+                collectData.stop_analyze()
+                server_info.analyze_running = False
+                server_info.analyze_info = 'Admin stopped analyze'
+                server_info.save()
+                # log
+                log = ServerLog(tier=server_info.tier_to_analyze, division=server_info.division_to_analyze, page=server_info.start_page,
+                                note='Admin stopped analyze', date_time=datetime.now())
+                log.save()
+                response_data['message'] = 'Analyze was stopped'
+            else:
+                response_data['message'] = 'Analyze is not started!'
         else:
             response_data['message'] = 'Analyze is not started!'
 
