@@ -23,6 +23,8 @@ class ChampionStatistics:
     play_rate = 0.0
     ban_rate = 0.0
     analyzed_games = 0
+    cs_per_minute = 0.0
+    first_item_id = 0
 
     def __init__(self, champion_name):
         self.champion_name = champion_name
@@ -43,6 +45,7 @@ class ChampionStatistics:
         first_tower_counter = 0
         win_game_counter = 0
         game_duration = 0
+        cs = 0
 
         champion_matches = MatchChampion.objects.filter(champion__name=self.champion_name)
 
@@ -64,6 +67,7 @@ class ChampionStatistics:
             if matchChampion.win:
                 win_game_counter += 1
             game_duration += matchChampion.match.duration
+            cs += matchChampion.cs
 
         number_of_matches = champion_matches.__len__()
         number_of_all_matches = Match.objects.all().__len__()
@@ -71,6 +75,9 @@ class ChampionStatistics:
 
         # most played lane
         lane_query_set = MatchChampion.objects.filter(champion__name=self.champion_name).values('lane').annotate(lane_count=Count('lane')).order_by('-lane_count')
+
+        # first item
+        first_item_query_set = MatchChampion.objects.filter(champion__name=self.champion_name).values('first_item_id').annotate(first_item_count=Count('first_item_id')).order_by('-first_item_count')
 
         # calculate statistics
         self.average_kills = kills / number_of_matches
@@ -92,3 +99,6 @@ class ChampionStatistics:
         self.play_rate = (number_of_matches / number_of_all_matches) * 100
         self.ban_rate = (number_of_bans / number_of_all_matches) * 100
         self.analyzed_games = number_of_matches
+        self.cs_per_minute = cs / (game_duration / 60)
+        if first_item_query_set.__len__() > 0:
+            self.first_item_id = first_item_query_set[0]['first_item_id']

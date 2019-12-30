@@ -28,6 +28,8 @@ class ChampionStatisticsSerializer(serializers.Serializer):
     play_rate = serializers.FloatField()
     ban_rate = serializers.FloatField()
     analyzed_games = serializers.IntegerField()
+    cs_per_minute = serializers.FloatField()
+    first_item_id = serializers.IntegerField()
 
     def update(self, instance, validated_data):
         pass

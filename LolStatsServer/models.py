@@ -67,6 +67,8 @@ class MatchChampion(models.Model):
     first_tower = models.BooleanField()
     lane = models.CharField(max_length=50)
     win = models.BooleanField()
+    cs = models.IntegerField()
+    first_item_id = models.IntegerField()
 
     class Meta:
         verbose_name = "MatchChampion"

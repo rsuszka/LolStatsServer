@@ -27,7 +27,7 @@ class MatchBanAdmin(admin.ModelAdmin):
 class MatchChampionAdmin(admin.ModelAdmin):
     list_display = ["id", "match_id", "champion_id", "kills", "deaths", "assists", "damage_defeat",
                     "damage_to_objectives", "damage_taken", "gold_earned", "vision_score", "total_heal",
-                    "champion_level", "first_blood_kill", "first_tower", "lane"]
+                    "champion_level", "first_blood_kill", "first_tower", "lane", "cs", "first_item_id"]
 
 
 class ServerInfoAdmin(admin.ModelAdmin):

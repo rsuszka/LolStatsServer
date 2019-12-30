@@ -38,8 +38,11 @@ class CollectData:
                         # load summoner history
                         summoner_history = watcher.match.matchlist_by_account(region, account_id)
                         match_by_summoner_counter = 0
+                        match_error_counter = 0
                         for match in summoner_history['matches']:
                             try:
+                                if match_error_counter > 1:
+                                    break
                                 match_id = match['gameId']
                                 analyzed_match = watcher.match.by_id(region, match_id)
                                 queue_id = analyzed_match['queueId']
@@ -75,7 +78,12 @@ class CollectData:
                                         first_blood_kill = participant_stats['firstBloodKill']
                                         first_tower = participant_stats['firstTowerKill']
                                         lane = participant['timeline']['lane']
+                                        role = participant['timeline']['role']
+                                        if lane == 'BOTTOM':
+                                            lane = 'ADC' if role == 'DUO_CARRY' else 'SUPPORT'
                                         win = participant_stats['win']
+                                        cs = participant_stats['totalMinionsKilled']
+                                        first_item = participant_stats['item1']
                                         stated_champion = Champion.objects.filter(champion_id=participant['championId'])[0]
                                         new_participant = MatchChampion(match=new_match, champion=stated_champion, kills=kills,
                                                                         deaths=deaths, assists=assists,
@@ -87,7 +95,7 @@ class CollectData:
                                                                         champion_level=champion_level,
                                                                         first_blood_kill=first_blood_kill,
                                                                         first_tower=first_tower,
-                                                                        lane=lane, win=win)
+                                                                        lane=lane, win=win, cs=cs, first_item_id=first_item)
                                         new_participant.save()
 
                                     match_by_summoner_counter += 1
@@ -103,13 +111,16 @@ class CollectData:
 
                             # error in match
                             except Exception as err:
-                                log = ServerLog(tier=tier, division=division, page=page, note='Match error. ' + str(err), date_time=datetime.now())
+                                log = ServerLog(tier=tier, division=division, page=page, note='Match error. ' + 'MATCH ' + str(err), date_time=datetime.now())
                                 log.save()
+                                match_error_counter += 1
+                                time.sleep(10)
 
                     # error in loading summoner account or history
                     except Exception as err:
-                        log = ServerLog(tier=tier, division=division, page=page, note='Summoner error. ' + str(err), date_time=datetime.now())
+                        log = ServerLog(tier=tier, division=division, page=page, note='Summoner error. ' + 'LOADING ' + str(err), date_time=datetime.now())
                         log.save()
+                        time.sleep(10)
 
             # actualize server info
             server_info = ServerInfo.objects.all()[0]
@@ -133,7 +144,8 @@ class CollectData:
         self.__process = subprocess.Popen(['python', 'manage.py', 'process_tasks'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def stop_analyze(self):
-        self.__process.terminate()
-        self.__process = None
+        if self.__process is not None:
+            self.__process.terminate()
+            self.__process = None
         Task.objects.all().delete()
         CompletedTask.objects.all().delete()
