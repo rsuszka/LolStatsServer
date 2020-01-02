@@ -16,12 +16,13 @@ class GetChampionsList(APIView):
 
     @staticmethod
     def get(request):
-        champions = Champion.objects.all()
-        serializer = ChampionSerializer(champions, many=True)
-        return Response(serializer.data)
-
-    def post(self):
-        pass
+        try:
+            champions = Champion.objects.all()
+            serializer = ChampionSerializer(champions, many=True)
+            return Response(serializer.data)
+        except Exception:
+            response_data = {'message': 'Other server error'}
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
 
 
 class GetGameVersion(APIView):
@@ -52,14 +53,20 @@ class ReloadChampions(APIView):
             version_json = watcher.data_dragon.versions_for_region(region)
             champions_version = version_json['n']['champion']
             champions_json = watcher.data_dragon.champions(champions_version)
-            # delete old champions list
-            Champion.objects.all().delete()
-            # create new champions list
+            # actualize champions in database
             for champion in champions_json['data']:
                 key = champions_json['data'][champion]['key']
                 name = champions_json['data'][champion]['name'].lower()
-                new_champion = Champion(champion_id=key, name=name)
-                new_champion.save()
+                database_champion = Champion.objects.filter(champion_id=key)
+                if len(database_champion) > 0:
+                    if name == 'nunu & willump':
+                        name = 'nunu'
+                    database_champion[0].name = name
+                    database_champion[0].save()
+                else:
+                    new_champion = Champion(champion_id=key, name=name)
+                    new_champion.save()
+
             # create response
             response_data['message'] = 'Champions reloaded successful'
             return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
@@ -105,7 +112,6 @@ class GetStatisticsFromChampion(APIView):
         response_data = {}
         try:
             champion_name = request.GET['name'].lower()
-            champion_name = 'nunu & willump' if champion_name == 'nunu' else champion_name
             if MatchChampion.objects.filter(champion__name=champion_name).__len__() > 0:
                 # calculate champion statistics
                 champion_statistics = ChampionStatistics(champion_name=champion_name)

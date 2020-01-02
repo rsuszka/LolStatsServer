@@ -83,7 +83,7 @@ class CollectData:
                                             lane = 'ADC' if role == 'DUO_CARRY' else 'SUPPORT'
                                         win = participant_stats['win']
                                         cs = participant_stats['totalMinionsKilled']
-                                        first_item = participant_stats['item1']
+                                        first_item = participant_stats['item1'] if lane != 'JUNGLE' else participant_stats['item3']
                                         stated_champion = Champion.objects.filter(champion_id=participant['championId'])[0]
                                         new_participant = MatchChampion(match=new_match, champion=stated_champion, kills=kills,
                                                                         deaths=deaths, assists=assists,
