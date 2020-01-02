@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from .views import GetChampionsList, ReloadChampions, GetStatisticsFromChampion, GetStatisticsFromUser, StartAnalyzeGames, StopAnalyzeGames, ReloadQueues
+from .views import GetChampionsList, ReloadChampions, GetStatisticsFromChampion, GetStatisticsFromUser, StartAnalyzeGames, StopAnalyzeGames, ReloadQueues, GetGameVersion
 
 urlpatterns = [
     path('', admin.site.urls),
@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/admin/analyze/start', StartAnalyzeGames.as_view()),
     path('api/admin/analyze/stop', StopAnalyzeGames.as_view()),
     path('api/champions', GetChampionsList.as_view()),
+    path('api/game_version', GetGameVersion.as_view()),
     path('api/statistics/champion', GetStatisticsFromChampion.as_view()),
     path('api/statistics/summoner', GetStatisticsFromUser.as_view())
 ]

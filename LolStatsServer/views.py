@@ -24,6 +24,23 @@ class GetChampionsList(APIView):
         pass
 
 
+class GetGameVersion(APIView):
+
+    @staticmethod
+    def get(request):
+        try:
+            response_data = {}
+            region = 'euw1'
+            watcher = RiotWatcher(RiotApiKey.objects.all()[0].api_key)
+            game_version = watcher.data_dragon.versions_for_region(region)
+            version = game_version['n']['champion']
+            response_data['game_version'] = version
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
+        except Exception:
+            response_data['message'] = 'Other server error'
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
+
+
 class ReloadChampions(APIView):
 
     @staticmethod
