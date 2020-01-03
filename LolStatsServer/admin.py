@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Champion, RiotApiKey, Match, MatchBan, MatchChampion, ServerInfo, Queue, ServerLog
+from .models import Champion, RiotApiKey, Match, MatchBan, MatchChampion, ServerInfo, Queue, ServerLog, Rune
 
 
 class ChampionAdmin(admin.ModelAdmin):
@@ -10,6 +10,11 @@ class ChampionAdmin(admin.ModelAdmin):
 class QueueAdmin(admin.ModelAdmin):
     list_display = ["queue_id", "map", "description", "notes"]
     change_list_template = 'queues_change_list.html'
+
+
+class RuneAdmin(admin.ModelAdmin):
+    list_display = ["rune_id", "name", "key", "icon"]
+    change_list_template = 'runes_change_list.html'
 
 
 class RiotApiKeyAdmin(admin.ModelAdmin):
@@ -27,7 +32,7 @@ class MatchBanAdmin(admin.ModelAdmin):
 class MatchChampionAdmin(admin.ModelAdmin):
     list_display = ["id", "match_id", "champion_id", "kills", "deaths", "assists", "damage_defeat",
                     "damage_to_objectives", "damage_taken", "gold_earned", "vision_score", "total_heal",
-                    "champion_level", "first_blood_kill", "first_tower", "lane", "cs", "first_item_id"]
+                    "champion_level", "first_blood_kill", "first_tower", "lane", "cs", "first_item_id", "rune_id"]
 
 
 class ServerInfoAdmin(admin.ModelAdmin):
@@ -42,6 +47,7 @@ class ServerLogAdmin(admin.ModelAdmin):
 
 admin.site.register(Champion, ChampionAdmin)
 admin.site.register(Queue, QueueAdmin)
+admin.site.register(Rune, RuneAdmin)
 admin.site.register(RiotApiKey, RiotApiKeyAdmin)
 admin.site.register(Match, MatchAdmin)
 admin.site.register(MatchBan, MatchBanAdmin)

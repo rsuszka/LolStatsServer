@@ -83,7 +83,8 @@ class CollectData:
                                             lane = 'ADC' if role == 'DUO_CARRY' else 'SUPPORT'
                                         win = participant_stats['win']
                                         cs = participant_stats['totalMinionsKilled']
-                                        first_item = participant_stats['item1'] if lane != 'JUNGLE' else participant_stats['item3']
+                                        first_item = participant_stats['item1'] if lane != 'JUNGLE' else participant_stats['item0']
+                                        rune_id = participant_stats['perk0']
                                         stated_champion = Champion.objects.filter(champion_id=participant['championId'])[0]
                                         new_participant = MatchChampion(match=new_match, champion=stated_champion, kills=kills,
                                                                         deaths=deaths, assists=assists,
@@ -95,7 +96,8 @@ class CollectData:
                                                                         champion_level=champion_level,
                                                                         first_blood_kill=first_blood_kill,
                                                                         first_tower=first_tower,
-                                                                        lane=lane, win=win, cs=cs, first_item_id=first_item)
+                                                                        lane=lane, win=win, cs=cs, first_item_id=first_item,
+                                                                        rune_id=rune_id)
                                         new_participant.save()
 
                                     match_by_summoner_counter += 1

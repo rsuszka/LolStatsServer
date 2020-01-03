@@ -22,6 +22,17 @@ class Queue(models.Model):
         verbose_name_plural = "Queues"
 
 
+class Rune(models.Model):
+    rune_id = models.IntegerField(primary_key=True)
+    name = models.CharField(max_length=50)
+    key = models.CharField(max_length=50)
+    icon = models.CharField(max_length=300)
+
+    class Meta:
+        verbose_name = "Rune"
+        verbose_name_plural = "Runes"
+
+
 class RiotApiKey(models.Model):
     api_key = models.CharField(max_length=50)
 
@@ -69,6 +80,7 @@ class MatchChampion(models.Model):
     win = models.BooleanField()
     cs = models.IntegerField()
     first_item_id = models.IntegerField()
+    rune_id = models.IntegerField()
 
     class Meta:
         verbose_name = "MatchChampion"

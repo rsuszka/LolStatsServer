@@ -1,5 +1,5 @@
 from django.db.models import Count
-from LolStatsServer.models import MatchChampion, Match, MatchBan
+from LolStatsServer.models import MatchChampion, Match, MatchBan, Rune
 
 
 class ChampionStatistics:
@@ -25,6 +25,8 @@ class ChampionStatistics:
     analyzed_games = 0
     cs_per_minute = 0.0
     first_item_id = 0
+    rune_id = 0
+    rune_link = ""
 
     def __init__(self, champion_name):
         self.champion_name = champion_name
@@ -79,6 +81,9 @@ class ChampionStatistics:
         # first item
         first_item_query_set = MatchChampion.objects.filter(champion__name=self.champion_name).values('first_item_id').annotate(first_item_count=Count('first_item_id')).order_by('-first_item_count')
 
+        # rune id
+        runes_query_set = MatchChampion.objects.filter(champion__name=self.champion_name).values('rune_id').annotate(rune_count=Count('rune_id')).order_by('-rune_count')
+
         # calculate statistics
         self.average_kills = kills / number_of_matches
         self.average_deaths = deaths / number_of_matches
@@ -102,3 +107,8 @@ class ChampionStatistics:
         self.cs_per_minute = cs / (game_duration / 60)
         if first_item_query_set.__len__() > 0:
             self.first_item_id = first_item_query_set[0]['first_item_id']
+        if runes_query_set.__len__() > 0:
+            self.rune_id = runes_query_set[0]['rune_id']
+            rune_query_set = Rune.objects.filter(rune_id=self.rune_id)
+            if len(rune_query_set) > 0:
+                self.rune_link = rune_query_set[0].icon

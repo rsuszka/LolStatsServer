@@ -30,6 +30,8 @@ class ChampionStatisticsSerializer(serializers.Serializer):
     analyzed_games = serializers.IntegerField()
     cs_per_minute = serializers.FloatField()
     first_item_id = serializers.IntegerField()
+    rune_id = serializers.IntegerField()
+    rune_link = serializers.CharField()
 
     def update(self, instance, validated_data):
         pass

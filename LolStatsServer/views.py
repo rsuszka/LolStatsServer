@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import HttpResponse
 import json
-from .models import Champion, RiotApiKey, MatchChampion, ServerInfo, Queue, ServerLog
+from .models import Champion, RiotApiKey, MatchChampion, ServerInfo, Queue, ServerLog, Rune
 from .serializers import ChampionSerializer, ChampionStatisticsSerializer
 from LolStatsServer.model.statistics import ChampionStatistics
 from LolStatsServer.model.collecting_data import CollectData
@@ -103,6 +103,49 @@ class ReloadQueues(APIView):
         except ApiError:
             response_data['message'] = 'Other server error'
             return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
+
+
+class ReloadRunes(APIView):
+
+    @staticmethod
+    def get(request):
+        try:
+            response_data = {}
+            region = 'euw1'
+            watcher = RiotWatcher(RiotApiKey.objects.all()[0].api_key)
+            version_json = watcher.data_dragon.versions_for_region(region)
+            runes_version = version_json['n']['champion']
+            runes_url = 'http://ddragon.leagueoflegends.com/cdn/' + runes_version + '/data/en_US/runesReforged.json'
+            runes_request = requests.get(runes_url)
+            if runes_request.status_code == 200:
+                # actualize champions in database
+                runes_json = runes_request.json()
+                for runes_tree in runes_json:
+                    for rune_in_tree in runes_tree['slots'][0]['runes']:
+                        rune_id = rune_in_tree['id']
+                        name = rune_in_tree['name']
+                        key = rune_in_tree['key']
+                        link = 'https://ddragon.leagueoflegends.com/cdn/img/' + rune_in_tree['icon']
+                        database_rune = Rune.objects.filter(rune_id=rune_id)
+                        if len(database_rune) > 0:
+                            database_rune[0].name = name
+                            database_rune[0].key = key
+                            database_rune[0].icon = link
+                            database_rune[0].save()
+                        else:
+                            rune = Rune(rune_id=rune_id, name=name, key=key, icon=link)
+                            rune.save()
+
+                # create response
+                response_data['message'] = 'Runes reloaded successful'
+                return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
+            else:
+                response_data['message'] = 'External Api error'
+                return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
+
+        except Exception:
+            response_data['message'] = 'Other server error'
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=501)
 
 
 class GetStatisticsFromChampion(APIView):
