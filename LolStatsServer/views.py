@@ -21,8 +21,8 @@ class GetChampionsList(APIView):
             serializer = ChampionSerializer(champions, many=True)
             return Response(serializer.data)
         except Exception:
-            response_data = {'message': 'Other server error'}
-            return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
+            response_data = {'message': 'Server error'}
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=501)
 
 
 class GetGameVersion(APIView):
@@ -38,7 +38,7 @@ class GetGameVersion(APIView):
             response_data['game_version'] = version
             return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
         except Exception:
-            response_data['message'] = 'Other server error'
+            response_data['message'] = 'Server error'
             return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
 
 
@@ -72,7 +72,11 @@ class ReloadChampions(APIView):
             return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
 
         except ApiError:
-            response_data['message'] = 'Other server error'
+            response_data['message'] = 'Api error'
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=501)
+
+        except Exception:
+            response_data['message'] = 'Server error'
             return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
 
 
@@ -97,11 +101,15 @@ class ReloadQueues(APIView):
                     new_queue = Queue(queue_id=queue_id, map=map_name, description=description, notes=notes)
                     new_queue.save()
                 # create response
-                response_data['message'] = 'Maps reloaded successful'
+                response_data['message'] = 'Queues reloaded successful'
                 return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
 
         except ApiError:
-            response_data['message'] = 'Other server error'
+            response_data['message'] = 'Api error'
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=501)
+
+        except Exception:
+            response_data['message'] = 'Server error'
             return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
 
 
@@ -140,12 +148,12 @@ class ReloadRunes(APIView):
                 response_data['message'] = 'Runes reloaded successful'
                 return HttpResponse(json.dumps(response_data), content_type="application/json", status=200)
             else:
-                response_data['message'] = 'External Api error'
-                return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
+                response_data['message'] = 'Api error'
+                return HttpResponse(json.dumps(response_data), content_type="application/json", status=501)
 
         except Exception:
-            response_data['message'] = 'Other server error'
-            return HttpResponse(json.dumps(response_data), content_type="application/json", status=501)
+            response_data['message'] = 'Server error'
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
 
 
 class GetStatisticsFromChampion(APIView):
@@ -155,7 +163,7 @@ class GetStatisticsFromChampion(APIView):
         response_data = {}
         try:
             champion_name = request.GET['name'].lower()
-            if MatchChampion.objects.filter(champion__name=champion_name).__len__() > 0:
+            if len(MatchChampion.objects.filter(champion__name=champion_name)) > 0:
                 # calculate champion statistics
                 champion_statistics = ChampionStatistics(champion_name=champion_name)
                 champion_statistics.calculate()
@@ -169,8 +177,8 @@ class GetStatisticsFromChampion(APIView):
             response_data['message'] = 'Required String parameter "name" is not present'
             return HttpResponse(json.dumps(response_data), content_type="application/json", status=400)
 
-        except:
-            response_data['message'] = 'Other server error'
+        except Exception:
+            response_data['message'] = 'Server error'
             return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
 
 
@@ -218,6 +226,7 @@ class GetStatisticsFromUser(APIView):
                 if history_game_counter > 5:
                     break
 
+            # process 5 champion masteries
             mastery_table = []
             champion_mastery_counter = 1
             for champion_mastery in mastery_data:
@@ -232,6 +241,7 @@ class GetStatisticsFromUser(APIView):
                 if champion_mastery_counter > 5:
                     break
 
+            # process ranked information
             leagues_table = []
             for champion_league in leagues_data:
                 league_object = {'queue_type': champion_league['queueType'].replace('_', ' '),
@@ -267,11 +277,11 @@ class GetStatisticsFromUser(APIView):
                 return HttpResponse(json.dumps(response_data), content_type="application/json", status=404)
             else:
                 response_data['message'] = 'Other api error [' + str(err.response.status_code) + ']'
-                return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
+                return HttpResponse(json.dumps(response_data), content_type="application/json", status=430)
 
         except Exception:
-            response_data['message'] = 'Other server error'
-            return HttpResponse(json.dumps(response_data), content_type="application/json", status=501)
+            response_data['message'] = 'Server error'
+            return HttpResponse(json.dumps(response_data), content_type="application/json", status=500)
 
 
 # collecting data object
@@ -284,7 +294,7 @@ class StartAnalyzeGames(APIView):
     def get(request):
         response_data = {}
         # initialize object if not exists
-        if ServerInfo.objects.all().__len__() == 0:
+        if len(ServerInfo.objects.all()) == 0:
             server_info = ServerInfo(game_analyzed=0, game_analyzed_from_start=0, analyze_running=False, analyze_info='Admin started analyze',
                                      tier_to_analyze='GOLD', division_to_analyze='I', start_page=1, end_page=10)
             server_info.save()
@@ -312,7 +322,7 @@ class StopAnalyzeGames(APIView):
     @staticmethod
     def get(request):
         response_data = {}
-        if ServerInfo.objects.all().__len__() > 0:
+        if len(ServerInfo.objects.all()) > 0:
             server_info = ServerInfo.objects.all()[0]
             if server_info.analyze_running:
                 # stop background task

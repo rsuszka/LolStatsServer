@@ -15,7 +15,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from .views import GetChampionsList, ReloadChampions, GetStatisticsFromChampion, GetStatisticsFromUser, StartAnalyzeGames, StopAnalyzeGames, ReloadQueues, GetGameVersion, ReloadRunes
+from .views import GetChampionsList, ReloadChampions, GetStatisticsFromChampion, GetStatisticsFromUser, \
+    StartAnalyzeGames, StopAnalyzeGames, ReloadQueues, GetGameVersion, ReloadRunes
 
 urlpatterns = [
     path('', admin.site.urls),

@@ -71,9 +71,9 @@ class ChampionStatistics:
             game_duration += matchChampion.match.duration
             cs += matchChampion.cs
 
-        number_of_matches = champion_matches.__len__()
-        number_of_all_matches = Match.objects.all().__len__()
-        number_of_bans = MatchBan.objects.filter(champion__name=self.champion_name).__len__()
+        number_of_matches = len(champion_matches)
+        number_of_all_matches = len(Match.objects.all())
+        number_of_bans = len(MatchBan.objects.filter(champion__name=self.champion_name))
 
         # most played lane
         lane_query_set = MatchChampion.objects.filter(champion__name=self.champion_name).values('lane').annotate(lane_count=Count('lane')).order_by('-lane_count')
@@ -97,7 +97,7 @@ class ChampionStatistics:
         self.average_champion_level = champion_level / number_of_matches
         self.first_blood_kill = (first_blood_kill_counter / number_of_matches) * 100
         self.first_tower = (first_tower_counter / number_of_matches) * 100
-        if lane_query_set.__len__() > 0:
+        if len(lane_query_set) > 0:
             self.lane = lane_query_set[0]['lane']
         self.win_rate = (win_game_counter / number_of_matches) * 100
         self.average_game_duration = game_duration / number_of_matches
@@ -105,9 +105,9 @@ class ChampionStatistics:
         self.ban_rate = (number_of_bans / number_of_all_matches) * 100
         self.analyzed_games = number_of_matches
         self.cs_per_minute = cs / (game_duration / 60)
-        if first_item_query_set.__len__() > 0:
+        if len(first_item_query_set) > 0:
             self.first_item_id = first_item_query_set[0]['first_item_id']
-        if runes_query_set.__len__() > 0:
+        if len(runes_query_set) > 0:
             self.rune_id = runes_query_set[0]['rune_id']
             rune_query_set = Rune.objects.filter(rune_id=self.rune_id)
             if len(rune_query_set) > 0:
